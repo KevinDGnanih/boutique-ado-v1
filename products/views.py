@@ -10,21 +10,36 @@ def all_products(request):
     products = Product.objects.all()
     query = None
     categories = None
+    sort = None
+    direction = None
 
     if request.GET:
-        if 'category' in request.GET:
-            categories = request.GET['category'].split(',')
-            products = products.filter(category__name__in=categories)
-            categories = Category.objects.filter(name__in=categories)
+        if 'sort' in reuqest.GET:
+            sortkey = request.GET['sort']
+            sort = sortkey
+            if sortkey == 'name':
+                sortkey = 'lower_name'
+                products = products.annotate(lower_name=Lower('name'))
+            
+            if 'direction' in request.GET:
+                direction = rewuest.GET['direction']
+                if direction == 'desc':
+                    sortkey = f'-{sortkey}'
+                products = products.order_by(sortkey)
 
-        if 'q' in request.GET:
-            query = request.GET['q']
-            if not query:
-                messages.error(request, "You didn't enter any search criterial!")
-                return redirect(reverse('products'))
+            if 'category' in request.GET:
+                categories = request.GET['category'].split(',')
+                products = products.filter(category__name__in=categories)
+                categories = Category.objects.filter(name__in=categories)
 
-            queries = Q(name__icontains=query) | Q(description__icontains=query)
-            products = products.filter(queries)
+            if 'q' in request.GET:
+                query = request.GET['q']
+                if not query:
+                    messages.error(request, "You didn't enter any search criterial!")
+                    return redirect(reverse('products'))
+
+        queries = Q(name__icontains=query) | Q(description__icontains=query)
+        products = products.filter(queries)
 
     context = {
         'products': products,
