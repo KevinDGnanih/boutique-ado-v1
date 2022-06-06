@@ -14,7 +14,7 @@ def all_products(request):
     direction = None
 
     if request.GET:
-        if 'sort' in reuqest.GET:
+        if 'sort' in request.GET:
             sortkey = request.GET['sort']
             sort = sortkey
             if sortkey == 'name':
@@ -22,7 +22,7 @@ def all_products(request):
                 products = products.annotate(lower_name=Lower('name'))
             
             if 'direction' in request.GET:
-                direction = rewuest.GET['direction']
+                direction = request.GET['direction']
                 if direction == 'desc':
                     sortkey = f'-{sortkey}'
                 products = products.order_by(sortkey)
@@ -38,13 +38,16 @@ def all_products(request):
                     messages.error(request, "You didn't enter any search criterial!")
                     return redirect(reverse('products'))
 
-        queries = Q(name__icontains=query) | Q(description__icontains=query)
-        products = products.filter(queries)
+                queries = Q(name__icontains=query) | Q(description__icontains=query)
+                products = products.filter(queries)
+
+    current_sorting = f'{sort}_{direction}'
 
     context = {
         'products': products,
         'search_term': query,
         'current_categories': categories,
+        'current_sorting': current_sorting,
     }
 
     return render(request, 'products/products.html', context)
